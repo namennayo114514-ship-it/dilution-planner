@@ -42,25 +42,32 @@ function cell(row, content) {
 
 function render(grid) {
   const ready = current.filter(row => row.kind !== "hold");
-  const water = ready.reduce((sum, row) => sum + row.finalWater + row.intermediateWater, 0);
+  const intermediateWater = ready.reduce((sum, row) => sum + row.intermediateWater, 0);
+  const finalWater = ready.reduce((sum, row) => sum + row.finalWater, 0);
   const waste = ready.reduce((sum, row) => sum + row.waste, 0);
   byId("result-context").textContent =
     `${demo ? "仮データ · " : ""}${current.length}件 · 目標 ${displayNumber(grid.final / 1000)} µL / ${displayNumber(grid.mass)} ng · 許容差 ±${displayNumber(grid.tolerance * 100)}%`;
   const metrics = [
     ["調製可能", `${ready.length} / ${current.length}件`],
     ["中間チューブ", `${ready.filter(row => row.kind !== "direct").length}本`],
-    ["必要な水", `${displayNumber(water)} µL`],
+    ["必要な水", `${displayNumber(intermediateWater + finalWater)} µL`,
+      `中間 ${displayNumber(intermediateWater)} µL / 最終 ${displayNumber(finalWater)} µL`],
     ["移送後の中間液残り", `${displayNumber(waste)} µL`]
   ];
   const summary = byId("summary");
   summary.replaceChildren();
-  for (const [label, value] of metrics) {
+  for (const [label, value, breakdown] of metrics) {
     const item = document.createElement("div");
     const title = document.createElement("span");
     const amount = document.createElement("strong");
     title.textContent = label;
     amount.textContent = value;
     item.append(title, amount);
+    if (breakdown) {
+      const detail = document.createElement("span");
+      detail.textContent = breakdown;
+      item.append(detail);
+    }
     summary.append(item);
   }
   const body = byId("rows");

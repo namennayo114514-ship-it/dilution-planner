@@ -7,7 +7,7 @@
 <meta name="description" content="Qubitの濃度からサンプルごとの希釈手順を計算します。">
 <link rel="stylesheet" href="style.css?v=pipettes">
 <script defer src="planner.js?v=pipettes"></script>
-<script defer src="app.js?v=pipettes"></script>
+<script defer src="app.js?v=water"></script>
 </head>
 <body>
 <header><div class="shell brand"><span class="mark" aria-hidden="true">µ</span> 希釈プランナー</div></header>
@@ -37,10 +37,11 @@
           </tbody>
         </table>
         <div class="settings">
-          <label title="中間希釈液から最終チューブへ移す共通体積">共通移送量 <span>µL</span><input name="transfer" type="number" step="any" value="1" required></label>
+          <label title="中間希釈液から最終チューブへ移す共通体積">共通移送量 <span>µL</span><input name="transfer" type="number" step="any" value="0.20" required></label>
           <label title="移送後に中間チューブに残す最小体積">中間液の余裕 <span>µL</span><input name="reserve" type="number" step="any" value="0.5" required></label>
           <label title="分注刻みによる計算上のRNA量のずれ">RNA量の許容差 <span>%</span><input name="tolerance" type="number" step="any" value="2" required></label>
         </div>
+        <p class="note">共通移送量を小さくすると、高濃度のサンプルで中間希釈に使う水を抑えられます。使用するピペットで量り取れる体積を指定してください。</p>
       </details>
       <!-- OUTPUT は下の操作表とCSV。ファイルの保存先はダウンロード時に指定。ここまで変更 -->
       <p class="note">実際に使うピペットと、ライブラリー調製条件に合わせて設定してください。許容差は分注量の丸めに対する設定です。</p>
