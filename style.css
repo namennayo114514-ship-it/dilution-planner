@@ -59,7 +59,7 @@ thead { position: sticky; top: 0; z-index: 1; background: #e8f1ec; }
 th, td { text-align: center; padding: 8px; border-bottom: 1px solid var(--line); }
 td:nth-child(2), td:nth-child(4) { text-align: left; overflow-wrap: anywhere; }
 td:nth-child(2) { font-weight: 750; }
-td:nth-child(7), td:nth-child(8) { background: #eff7f2; }
+td:nth-child(9), td:nth-child(10) { background: #eff7f2; }
 tr.hold td, tr.custom td:nth-child(4) { background: #fff6df; color: #775116; }
 tr.done td { background: #e0eee6; color: #476057; }
 input[type=checkbox] { width: 17px; height: 17px; accent-color: var(--green); vertical-align: middle; }

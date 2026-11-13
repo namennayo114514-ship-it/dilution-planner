@@ -7,7 +7,7 @@
 const byId = id => document.getElementById(id);
 const form = byId("plan-form");
 const input = byId("samples");
-const labels = { direct: "直接", shared: "共通移送量", custom: "個別移送量", hold: "要確認" };
+const labels = { direct: "直接", serial: "2段 · A→B→最終", shared: "1段 · A→最終", custom: "1段 · 個別移送", hold: "要確認" };
 let current = [];
 let demo = false;
 
@@ -42,14 +42,14 @@ function cell(row, content) {
 
 function render(grid) {
   const ready = current.filter(row => row.kind !== "hold");
-  const intermediateWater = ready.reduce((sum, row) => sum + row.intermediateWater, 0);
+  const intermediateWater = ready.reduce((sum, row) => sum + row.intermediateWater + (row.secondWater ?? 0), 0);
   const finalWater = ready.reduce((sum, row) => sum + row.finalWater, 0);
   const waste = ready.reduce((sum, row) => sum + row.waste, 0);
   byId("result-context").textContent =
     `${demo ? "仮データ · " : ""}${current.length}件 · 目標 ${displayNumber(grid.final / 1000)} µL / ${displayNumber(grid.mass)} ng · 許容差 ±${displayNumber(grid.tolerance * 100)}%`;
   const metrics = [
     ["調製可能", `${ready.length} / ${current.length}件`],
-    ["中間チューブ", `${ready.filter(row => row.kind !== "direct").length}本`],
+    ["中間チューブ", `${ready.reduce((count, row) => count + (row.kind === "serial" ? 2 : Number(row.kind !== "direct")), 0)}本`],
     ["必要な水", `${displayNumber(intermediateWater + finalWater)} µL`,
       `中間 ${displayNumber(intermediateWater)} µL / 最終 ${displayNumber(finalWater)} µL`],
     ["移送後の中間液残り", `${displayNumber(waste)} µL`]
@@ -87,6 +87,8 @@ function render(grid) {
     const steps = [
       [plan.kind === "direct" ? null : plan.source, plan.sourcePipette],
       [plan.kind === "direct" ? null : plan.intermediateWater, plan.intermediateWaterPipette],
+      [plan.secondSource, plan.secondSourcePipette],
+      [plan.secondWater, plan.secondWaterPipette],
       [plan.aliquot, plan.aliquotPipette],
       [plan.finalWater, plan.finalWaterPipette]
     ];
@@ -121,11 +123,13 @@ function csvCell(value) {
 function download() {
   const heading = ["ID", "原液RNA ng/µL", "原液DNA ng/µL", "原液残量 µL", "調製方法",
     "中間 原液 µL", "中間 原液 ピペット", "中間 水 µL", "中間 水 ピペット",
+    "中間B Aから µL", "中間B 移送 ピペット", "中間B 水 µL", "中間B 水 ピペット",
     "最終 原液または中間液 µL", "最終 移送 ピペット", "最終 水 µL", "最終 水 ピペット",
     "RNA見込み ng", "目標との差 %", "中間液残り µL"];
   const rows = current.map(p => [p.id, p.rna, p.dna, p.stock, p.reason || labels[p.kind],
     p.kind === "direct" ? null : p.source, p.kind === "direct" ? null : p.sourcePipette,
     p.kind === "direct" ? null : p.intermediateWater, p.intermediateWaterPipette,
+    p.secondSource, p.secondSourcePipette, p.secondWater, p.secondWaterPipette,
     p.aliquot, p.aliquotPipette, p.finalWater, p.finalWaterPipette, p.amount?.toPrecision(8), p.error?.toFixed(4), p.waste]);
   const csv = [heading, ...rows].map(row => row.map(csvCell).join(",")).join("\r\n");
   const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));

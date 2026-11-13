@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>希釈プランナー</title>
 <meta name="description" content="Qubitの濃度からサンプルごとの希釈手順を計算します。">
-<link rel="stylesheet" href="style.css?v=pipettes">
-<script defer src="planner.js?v=pipettes"></script>
-<script defer src="app.js?v=water"></script>
+<link rel="stylesheet" href="style.css?v=serial">
+<script defer src="planner.js?v=serial"></script>
+<script defer src="app.js?v=serial"></script>
 </head>
 <body>
 <header><div class="shell brand"><span class="mark" aria-hidden="true">µ</span> 希釈プランナー</div></header>
@@ -37,11 +37,12 @@
           </tbody>
         </table>
         <div class="settings">
-          <label title="中間希釈液から最終チューブへ移す共通体積">共通移送量 <span>µL</span><input name="transfer" type="number" step="any" value="0.20" required></label>
+          <label>使用する最小分注量 <span>µL</span><input name="minimum" type="number" step="any" value="1" required></label>
+          <label title="中間希釈液から最終チューブへ移す共通体積">共通移送量 <span>µL</span><input name="transfer" type="number" step="any" value="1" required></label>
           <label title="移送後に中間チューブに残す最小体積">中間液の余裕 <span>µL</span><input name="reserve" type="number" step="any" value="0.5" required></label>
           <label title="分注刻みによる計算上のRNA量のずれ">RNA量の許容差 <span>%</span><input name="tolerance" type="number" step="any" value="2" required></label>
         </div>
-        <p class="note">共通移送量を小さくすると、高濃度のサンプルで中間希釈に使う水を抑えられます。使用するピペットで量り取れる体積を指定してください。</p>
+        <p class="note">中間希釈を2段にすると水が減る場合は、AとBの2本を使います。</p>
       </details>
       <!-- OUTPUT は下の操作表とCSV。ファイルの保存先はダウンロード時に指定。ここまで変更 -->
       <p class="note">実際に使うピペットと、ライブラリー調製条件に合わせて設定してください。許容差は分注量の丸めに対する設定です。</p>
@@ -60,12 +61,12 @@
       <div class="actions"><button class="secondary" id="print" type="button">印刷</button><button class="secondary" id="export" type="button">CSV保存</button></div>
     </div>
     <div id="summary" class="metrics" aria-live="polite"></div>
-    <p class="note">中間希釈がある場合は、同じIDの中間チューブで原液と水を混和し、指定量を最終チューブに移します。水はすべて RNase-free 水です。</p>
+    <p class="note">各サンプルの中間チューブにIDとA・Bを記入し、各段で水と試料を混和してから次へ移します。水はすべて RNase-free 水です。</p>
     <div class="table-wrap" tabindex="0" aria-label="サンプル別の操作表">
       <table>
         <thead>
-          <tr><th rowspan="2" scope="col">完了</th><th rowspan="2" scope="col">ID</th><th rowspan="2" scope="col">RNA<br>ng/µL</th><th rowspan="2" scope="col">調製方法</th><th colspan="2" scope="colgroup">中間チューブ · µL</th><th colspan="2" scope="colgroup">最終チューブ · µL</th><th rowspan="2" scope="col">RNA見込み<br>ng</th></tr>
-          <tr><th scope="col">原液</th><th scope="col">水</th><th scope="col">原液 / 中間液</th><th scope="col">水</th></tr>
+          <tr><th rowspan="2" scope="col">完了</th><th rowspan="2" scope="col">ID</th><th rowspan="2" scope="col">RNA<br>ng/µL</th><th rowspan="2" scope="col">調製方法</th><th colspan="2" scope="colgroup">中間 A · µL</th><th colspan="2" scope="colgroup">中間 B · µL</th><th colspan="2" scope="colgroup">最終チューブ · µL</th><th rowspan="2" scope="col">RNA見込み<br>ng</th></tr>
+          <tr><th scope="col">原液</th><th scope="col">水</th><th scope="col">Aから</th><th scope="col">水</th><th scope="col">試料</th><th scope="col">水</th></tr>
         </thead>
         <tbody id="rows"></tbody>
       </table>

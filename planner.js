@@ -47,9 +47,9 @@ const EPS = 1e-8;
 const UNITS = 1000;
 
 function prepare(settings) {
-  const { volume, mass, transfer, reserve, tolerance } = settings;
+  const { volume, mass, transfer, reserve, tolerance, minimum } = settings;
   if (!Object.values(settings).every(Number.isFinite) || mass <= 0 || volume <= 0 ||
-      transfer <= 0 || transfer > volume || reserve < 0 || tolerance < 0 || tolerance >= 100) {
+      minimum <= 0 || transfer < minimum || transfer > volume || reserve < 0 || tolerance < 0 || tolerance >= 100) {
     throw new Error("調製条件を確認してください。共通移送量は最終体積以下で指定します。");
   }
   const ticks = value => {
@@ -71,6 +71,10 @@ function prepare(settings) {
     for (let value = min; value <= max; value += step) {
       if (!pipettes.has(value)) pipettes.set(value, name);
     }
+  }
+  const floor = ticks(minimum);
+  for (const value of pipettes.keys()) {
+    if (value > 0 && value < floor) pipettes.delete(value);
   }
   const common = ticks(transfer);
   if (!pipettes.has(common)) throw new Error("共通移送量をピペットで設定できる値にしてください。");
@@ -150,6 +154,34 @@ function planSample(sample, grid) {
   }
   const shared = aliquots.includes(transfer) ? find([transfer]) : null;
   const choice = shared || find(aliquots.filter(value => value !== transfer));
+  let serial;
+  // 原液は最小分注量、A→B と B→最終は共通移送量に揃える。
+  const source = volumes[0];
+  if (aliquots.includes(transfer) && source <= stockMax) {
+    for (const firstWater of volumes) {
+      const firstTotal = source + firstWater;
+      if (firstTotal < transfer + reserve) continue;
+      const waterSoFar = firstWater + final - transfer;
+      if (waterSoFar + volumes[0] >= (serial?.totalWater ?? choice?.totalWater ?? Infinity)) break;
+      const firstRatio = ratio * (source / firstTotal);
+      const minimumWater = transfer * (transfer * firstRatio / (1 + tolerance + EPS) - 1);
+      const secondWater = firstAtLeast(volumes, Math.max(reserve, minimumWater));
+      if (secondWater === undefined) continue;
+      const relative = firstRatio * transfer * (transfer / (transfer + secondWater));
+      const totalWater = waterSoFar + secondWater;
+      if (fits(relative) && totalWater < (serial?.totalWater ?? choice?.totalWater ?? Infinity)) {
+        serial = { firstWater, secondWater, relative, totalWater };
+      }
+    }
+  }
+  if (serial) {
+    const plan = result("serial", source, serial.firstWater, transfer, serial.relative);
+    return {
+      ...plan, secondSource: transfer / UNITS, secondSourcePipette: pipettes.get(transfer),
+      secondWater: serial.secondWater / UNITS, secondWaterPipette: pipettes.get(serial.secondWater),
+      waste: (source + serial.firstWater - transfer + serial.secondWater) / UNITS
+    };
+  }
   if (!choice) return hold("設定したピペットで調製不可");
   return result(shared ? "shared" : "custom", choice.source, choice.water, choice.aliquot, choice.relative);
 }
