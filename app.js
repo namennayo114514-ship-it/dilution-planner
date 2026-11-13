@@ -45,7 +45,7 @@ function render(grid) {
   const water = ready.reduce((sum, row) => sum + row.finalWater + row.intermediateWater, 0);
   const waste = ready.reduce((sum, row) => sum + row.waste, 0);
   byId("result-context").textContent =
-    `${demo ? "仮データ · " : ""}${current.length}件 · 目標 ${displayNumber(grid.final * grid.step)} µL / ${displayNumber(grid.mass)} ng · 許容差 ±${displayNumber(grid.tolerance * 100)}%`;
+    `${demo ? "仮データ · " : ""}${current.length}件 · 目標 ${displayNumber(grid.final / 1000)} µL / ${displayNumber(grid.mass)} ng · 許容差 ±${displayNumber(grid.tolerance * 100)}%`;
   const metrics = [
     ["調製可能", `${ready.length} / ${current.length}件`],
     ["中間チューブ", `${ready.filter(row => row.kind !== "direct").length}本`],
@@ -77,9 +77,16 @@ function render(grid) {
     cell(row, plan.id);
     cell(row, displayNumber(plan.rna));
     cell(row, plan.reason || labels[plan.kind]);
-    for (const value of [plan.kind === "direct" ? null : plan.source,
-      plan.kind === "direct" ? null : plan.intermediateWater, plan.aliquot,
-      plan.finalWater, plan.amount]) cell(row, displayNumber(value));
+    const steps = [
+      [plan.kind === "direct" ? null : plan.source, plan.sourcePipette],
+      [plan.kind === "direct" ? null : plan.intermediateWater, plan.intermediateWaterPipette],
+      [plan.aliquot, plan.aliquotPipette],
+      [plan.finalWater, plan.finalWaterPipette]
+    ];
+    for (const [volume, pipette] of steps) {
+      cell(row, volume && pipette ? `${volume} · ${pipette}` : displayNumber(volume));
+    }
+    cell(row, displayNumber(plan.amount));
   }
   byId("results").hidden = false;
 }
@@ -106,11 +113,13 @@ function csvCell(value) {
 
 function download() {
   const heading = ["ID", "原液RNA ng/µL", "原液DNA ng/µL", "原液残量 µL", "調製方法",
-    "中間 原液 µL", "中間 水 µL", "最終 原液または中間液 µL", "最終 水 µL",
+    "中間 原液 µL", "中間 原液 ピペット", "中間 水 µL", "中間 水 ピペット",
+    "最終 原液または中間液 µL", "最終 移送 ピペット", "最終 水 µL", "最終 水 ピペット",
     "RNA見込み ng", "目標との差 %", "中間液残り µL"];
   const rows = current.map(p => [p.id, p.rna, p.dna, p.stock, p.reason || labels[p.kind],
-    p.kind === "direct" ? null : p.source, p.kind === "direct" ? null : p.intermediateWater,
-    p.aliquot, p.finalWater, p.amount?.toPrecision(8), p.error?.toFixed(4), p.waste]);
+    p.kind === "direct" ? null : p.source, p.kind === "direct" ? null : p.sourcePipette,
+    p.kind === "direct" ? null : p.intermediateWater, p.intermediateWaterPipette,
+    p.aliquot, p.aliquotPipette, p.finalWater, p.finalWaterPipette, p.amount?.toPrecision(8), p.error?.toFixed(4), p.waste]);
   const csv = [heading, ...rows].map(row => row.map(csvCell).join(",")).join("\r\n");
   const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
   const link = document.createElement("a");

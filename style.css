@@ -52,6 +52,9 @@ button:hover { filter: brightness(.92); }
 .metrics strong { font-size: 1.05rem; }
 .table-wrap { overflow: auto; max-height: 64vh; }
 table { width: 100%; min-width: 790px; border-spacing: 0; font-size: .83rem; font-variant-numeric: tabular-nums; }
+.pipette-settings { min-width: 0; table-layout: fixed; }
+.pipette-settings th, .pipette-settings td { padding: 4px; background: transparent; }
+.pipette-settings input { margin: 0; }
 thead { position: sticky; top: 0; z-index: 1; background: #e8f1ec; }
 th, td { text-align: center; padding: 8px; border-bottom: 1px solid var(--line); }
 td:nth-child(2), td:nth-child(4) { text-align: left; overflow-wrap: anywhere; }

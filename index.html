@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>希釈プランナー</title>
 <meta name="description" content="Qubitの濃度からサンプルごとの希釈手順を計算します。">
-<link rel="stylesheet" href="style.css">
-<script defer src="planner.js"></script>
-<script defer src="app.js"></script>
+<link rel="stylesheet" href="style.css?v=pipettes">
+<script defer src="planner.js?v=pipettes"></script>
+<script defer src="app.js?v=pipettes"></script>
 </head>
 <body>
 <header><div class="shell brand"><span class="mark" aria-hidden="true">µ</span> 希釈プランナー</div></header>
@@ -26,10 +26,17 @@
       </div>
       <details open>
         <summary>ピペット設定と許容差</summary>
+        <p class="note">ピペットごとの最小量・最大量・刻みを実機に合わせてください（µL）。</p>
+        <table class="pipette-settings">
+          <thead><tr><th scope="col">ピペット</th><th scope="col">最小</th><th scope="col">最大</th><th scope="col">刻み</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">P2</th><td><input aria-label="P2 最小" name="P2Min" type="number" step="any" value="0.2" required></td><td><input aria-label="P2 最大" name="P2Max" type="number" step="any" value="2" required></td><td><input aria-label="P2 刻み" name="P2Step" type="number" step="any" value="0.01" required></td></tr>
+            <tr><th scope="row">P10</th><td><input aria-label="P10 最小" name="P10Min" type="number" step="any" value="1" required></td><td><input aria-label="P10 最大" name="P10Max" type="number" step="any" value="10" required></td><td><input aria-label="P10 刻み" name="P10Step" type="number" step="any" value="0.1" required></td></tr>
+            <tr><th scope="row">P20</th><td><input aria-label="P20 最小" name="P20Min" type="number" step="any" value="2" required></td><td><input aria-label="P20 最大" name="P20Max" type="number" step="any" value="20" required></td><td><input aria-label="P20 刻み" name="P20Step" type="number" step="any" value="0.1" required></td></tr>
+            <tr><th scope="row">P200</th><td><input aria-label="P200 最小" name="P200Min" type="number" step="any" value="20" required></td><td><input aria-label="P200 最大" name="P200Max" type="number" step="any" value="200" required></td><td><input aria-label="P200 刻み" name="P200Step" type="number" step="any" value="1" required></td></tr>
+          </tbody>
+        </table>
         <div class="settings">
-          <label title="1回の分注で使える最小体積">最小分注量 <span>µL</span><input name="min" type="number" step="any" value="1" required></label>
-          <label title="1回の分注で使える最大体積">最大分注量 <span>µL</span><input name="max" type="number" step="any" value="200" required></label>
-          <label title="ピペットで設定できる体積の刻み">分注刻み <span>µL</span><input name="step" type="number" step="any" value="0.1" required></label>
           <label title="中間希釈液から最終チューブへ移す共通体積">共通移送量 <span>µL</span><input name="transfer" type="number" step="any" value="1" required></label>
           <label title="移送後に中間チューブに残す最小体積">中間液の余裕 <span>µL</span><input name="reserve" type="number" step="any" value="0.5" required></label>
           <label title="分注刻みによる計算上のRNA量のずれ">RNA量の許容差 <span>%</span><input name="tolerance" type="number" step="any" value="2" required></label>

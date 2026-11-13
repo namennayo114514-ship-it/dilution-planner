@@ -44,90 +44,114 @@ function parseSamples(input) {
 }
 
 const EPS = 1e-8;
+const UNITS = 1000;
+
 function prepare(settings) {
-  const { volume, mass, step, min, max, transfer, reserve, tolerance } = settings;
-  if (!Object.values(settings).every(Number.isFinite) || mass <= 0 || step <= 0 ||
-      volume <= 0 || min <= 0 || max < min || transfer < min || transfer > max ||
-      reserve < 0 || tolerance < 0 || tolerance >= 100) {
-    throw new Error("調製条件を確認してください。共通移送量は最小・最大分注量の範囲で指定します。");
+  const { volume, mass, transfer, reserve, tolerance } = settings;
+  if (!Object.values(settings).every(Number.isFinite) || mass <= 0 || volume <= 0 ||
+      transfer <= 0 || transfer > volume || reserve < 0 || tolerance < 0 || tolerance >= 100) {
+    throw new Error("調製条件を確認してください。共通移送量は最終体積以下で指定します。");
   }
   const ticks = value => {
-    const count = value / step;
-    if (!Number.isFinite(count) || Math.abs(count - Math.round(count)) > EPS) {
-      throw new Error("体積・分注量・余裕量を分注刻みの倍数で指定してください。");
+    const scaled = value * UNITS;
+    const rounded = Math.round(scaled);
+    if (!Number.isSafeInteger(rounded) || Math.abs(scaled - rounded) > EPS) {
+      throw new Error("体積の設定は小数点以下3桁まで入力できます。");
     }
-    return Math.round(count);
+    return rounded;
   };
-  const grid = { final: ticks(volume), min: ticks(min), max: ticks(max),
-    transfer: ticks(transfer), reserve: ticks(reserve) };
-  if (grid.min < 1 || grid.max > 5000 || grid.final > 2 * grid.max ||
-      grid.reserve > 2 * grid.max || grid.transfer > grid.final) {
-    throw new Error("最大分注量は刻みの5,000倍までです。最終体積と余裕量は最大分注量の2倍まで、共通移送量は最終体積以下で指定してください。");
+  const pipettes = new Map([[0, ""]]);
+  for (const name of ["P2", "P10", "P20", "P200"]) {
+    const min = ticks(settings[name + "Min"]);
+    const max = ticks(settings[name + "Max"]);
+    const step = ticks(settings[name + "Step"]);
+    if (min <= 0 || max < min || step <= 0 || min % step || max % step || (max - min) / step > 2000) {
+      throw new Error(name + "の最小・最大は刻みの倍数で、設定段階は2,001以下にしてください。");
+    }
+    for (let value = min; value <= max; value += step) {
+      if (!pipettes.has(value)) pipettes.set(value, name);
+    }
   }
-  return { ...grid, mass, step, tolerance: tolerance / 100 };
+  const common = ticks(transfer);
+  if (!pipettes.has(common)) throw new Error("共通移送量をピペットで設定できる値にしてください。");
+  const volumes = [...pipettes.keys()].filter(Boolean).sort((a, b) => a - b);
+  const final = ticks(volume);
+  return {
+    final, mass, transfer: common, reserve: ticks(reserve), tolerance: tolerance / 100,
+    pipettes, volumes, aliquots: volumes.filter(value => value <= final && pipettes.has(final - value))
+  };
+}
+
+function firstAtLeast(values, threshold) {
+  let low = 0;
+  let high = values.length;
+  while (low < high) {
+    const mid = Math.floor((low + high) / 2);
+    if (values[mid] < threshold) low = mid + 1;
+    else high = mid;
+  }
+  return values[low];
 }
 
 function planSample(sample, grid) {
   const { rna, stock } = sample;
-  const { final, min, max, transfer, reserve, mass, step, tolerance } = grid;
+  const { final, transfer, reserve, mass, tolerance, pipettes, volumes, aliquots } = grid;
   const hold = reason => ({ ...sample, kind: "hold", reason });
   if (rna === null || rna === 0) return hold("RNA濃度を確認");
-  if (rna * (final * step) / mass < 1 - tolerance - EPS) return hold("最終体積内でRNA量が不足");
+  const ratio = rna / UNITS / mass;
+  if (ratio * final < 1 - tolerance - EPS) return hold("最終体積内でRNA量が不足");
   if (stock !== null && rna * stock / mass < 1 - tolerance - EPS) return hold("原液残量が不足");
 
-  const stockMax = stock === null ? max : Math.min(max, Math.floor(stock / step + EPS));
-  if (stockMax < min) return hold("原液残量が最小分注量未満");
-  const valid = ticks => ticks >= min && ticks <= max;
-  const fits = amount => Number.isFinite(amount) && Math.abs(amount / mass - 1) <= tolerance + EPS;
-  const ratio = rna * step / mass;
-  const toVolume = ticks => Number((ticks * step).toPrecision(12));
-  const result = (kind, source, intermediateWater, aliquot, amount) => ({
-    ...sample, kind, source: toVolume(source), intermediateWater: toVolume(intermediateWater),
-    aliquot: toVolume(aliquot), finalWater: toVolume(final - aliquot),
-    waste: kind === "direct" ? 0 : toVolume(source + intermediateWater - aliquot),
-    amount, error: (amount / mass - 1) * 100
+  const stockMax = stock === null ? Infinity : stock * UNITS + EPS;
+  if (stockMax < volumes[0]) return hold("原液残量が最小分注量未満");
+  const fits = relative => Math.abs(relative - 1) <= tolerance + EPS;
+  const result = (kind, source, water, aliquot, relative) => ({
+    ...sample, kind, source: source / UNITS, intermediateWater: water / UNITS,
+    aliquot: aliquot / UNITS, finalWater: (final - aliquot) / UNITS,
+    waste: kind === "direct" ? 0 : (source + water - aliquot) / UNITS,
+    amount: relative * mass, error: (relative - 1) * 100,
+    sourcePipette: pipettes.get(source), intermediateWaterPipette: pipettes.get(water),
+    aliquotPipette: pipettes.get(aliquot), finalWaterPipette: pipettes.get(final - aliquot)
   });
 
-  const allowed = [];
   let direct;
-  for (let aliquot = min; aliquot <= Math.min(max, final); aliquot++) {
-    if (final !== aliquot && !valid(final - aliquot)) continue;
-    allowed.push(aliquot);
-    const amount = rna * toVolume(aliquot);
-    if (aliquot <= stockMax && fits(amount) &&
-        (!direct || Math.abs(amount - mass) < Math.abs(direct.amount - mass))) {
-      direct = result("direct", aliquot, 0, aliquot, amount);
+  for (const aliquot of aliquots) {
+    if (aliquot > stockMax) break;
+    const relative = ratio * aliquot;
+    if (fits(relative) && (!direct || Math.abs(relative - 1) < Math.abs(direct.error) / 100)) {
+      direct = result("direct", aliquot, 0, aliquot, relative);
     }
   }
   if (direct) return direct;
 
-  // 採取量を固定したとき、各原液量で許容差を満たす最小の中間水量を調べる。
-  function find(aliquots) {
+  // 各原液量に対し、必要量以上の水を設定できる最小の分注量を探す。
+  function find(transfers) {
     let best;
-    for (const aliquot of aliquots) {
-      for (let source = min; source <= stockMax; source++) {
-        const minimumTotal = source * aliquot * ratio / (1 + tolerance + EPS);
-        if (minimumTotal > source + max) break;
-        const total = Math.max(source + min, aliquot + reserve, Math.ceil(minimumTotal));
-        if (total > source + max) continue;
-        const amount = rna * toVolume(source) * (aliquot / total);
-        if (!fits(amount)) continue;
-        const water = total - source + final - aliquot;
-        const error = Math.abs(amount / mass - 1);
-        if (!best || water < best.water ||
-            (water === best.water && (source < best.source ||
+    const maxWater = volumes[volumes.length - 1];
+    for (const aliquot of transfers) {
+      for (const source of volumes) {
+        if (source > stockMax) break;
+        const minimumWater = source * (aliquot * ratio / (1 + tolerance + EPS) - 1);
+        if (minimumWater > maxWater) break;
+        const water = firstAtLeast(volumes, Math.max(aliquot + reserve - source, minimumWater));
+        if (water === undefined) continue;
+        const relative = ratio * source * (aliquot / (source + water));
+        if (!fits(relative)) continue;
+        const totalWater = water + final - aliquot;
+        const error = Math.abs(relative - 1);
+        if (!best || totalWater < best.totalWater ||
+            (totalWater === best.totalWater && (source < best.source ||
             (source === best.source && error < best.error)))) {
-          best = { water, source, total, aliquot, amount, error };
+          best = { totalWater, source, water, aliquot, relative, error };
         }
       }
     }
     return best;
   }
-  const shared = allowed.includes(transfer) ? find([transfer]) : null;
-  const choice = shared || find(allowed.filter(value => value !== transfer));
-  if (!choice) return hold("設定範囲で調製不可");
-  return result(shared ? "shared" : "custom", choice.source, choice.total - choice.source,
-    choice.aliquot, choice.amount);
+  const shared = aliquots.includes(transfer) ? find([transfer]) : null;
+  const choice = shared || find(aliquots.filter(value => value !== transfer));
+  if (!choice) return hold("設定したピペットで調製不可");
+  return result(shared ? "shared" : "custom", choice.source, choice.water, choice.aliquot, choice.relative);
 }
 
 if (typeof module !== "undefined") module.exports = { parseSamples, prepare, planSample };
