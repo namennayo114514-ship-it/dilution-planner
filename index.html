@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>希釈プランナー</title>
+<meta name="description" content="Qubitの濃度からサンプルごとの希釈手順を計算します。">
+<link rel="stylesheet" href="style.css">
+<script defer src="planner.js"></script>
+<script defer src="app.js"></script>
+</head>
+<body>
+<header><div class="shell brand"><span class="mark" aria-hidden="true">µ</span> 希釈プランナー</div></header>
+<main class="shell">
+  <section class="intro">
+    <h1>希釈プランナー</h1>
+    <p>Qubitで測定した原液濃度から、サンプルごとの調製量を計算します。</p>
+  </section>
+  <form id="plan-form" class="workspace">
+    <section class="card">
+      <h2>調製条件</h2>
+      <!-- ここから変更：INPUT は右側の入力欄。以下の value は調製条件の初期値。 -->
+      <div class="targets">
+        <label>最終体積 <span>µL</span><input name="volume" type="number" min="0.000001" step="any" value="13" required></label>
+        <label>目標RNA量 <span>ng</span><input name="mass" type="number" min="0.000001" step="any" value="1" required></label>
+      </div>
+      <details open>
+        <summary>ピペット設定と許容差</summary>
+        <div class="settings">
+          <label title="1回の分注で使える最小体積">最小分注量 <span>µL</span><input name="min" type="number" step="any" value="1" required></label>
+          <label title="1回の分注で使える最大体積">最大分注量 <span>µL</span><input name="max" type="number" step="any" value="200" required></label>
+          <label title="ピペットで設定できる体積の刻み">分注刻み <span>µL</span><input name="step" type="number" step="any" value="0.1" required></label>
+          <label title="中間希釈液から最終チューブへ移す共通体積">共通移送量 <span>µL</span><input name="transfer" type="number" step="any" value="1" required></label>
+          <label title="移送後に中間チューブに残す最小体積">中間液の余裕 <span>µL</span><input name="reserve" type="number" step="any" value="0.5" required></label>
+          <label title="分注刻みによる計算上のRNA量のずれ">RNA量の許容差 <span>%</span><input name="tolerance" type="number" step="any" value="2" required></label>
+        </div>
+      </details>
+      <!-- OUTPUT は下の操作表とCSV。ファイルの保存先はダウンロード時に指定。ここまで変更 -->
+      <p class="note">実際に使うピペットと、ライブラリー調製条件に合わせて設定してください。許容差は分注量の丸めに対する設定です。</p>
+    </section>
+    <section class="card samples">
+      <div class="heading"><h2><label for="samples">サンプル入力</label></h2><button class="secondary" type="button" id="demo">仮データ60件</button></div>
+      <p class="note" id="input-note">CSVまたはタブ区切りで貼り付け。列は <code>id, rna, dna, stock</code> の順で、DNA濃度と原液残量は任意です。濃度は原液の ng/µL、残量は µL で入力します。</p>
+      <textarea id="samples" aria-describedby="input-note" spellcheck="false" rows="10" placeholder="id,rna,dna,stock&#10;S01,1.0,,&#10;S02,12.4,8.1,5"></textarea>
+      <div class="actions"><span id="input-kind"></span><button type="submit">調製手順を計算</button></div>
+    </section>
+  </form>
+  <p id="error" class="error" role="alert" hidden></p>
+  <section class="results" id="results" hidden>
+    <div class="heading result-heading">
+      <div><h2>サンプル別の調製手順</h2><p class="note" id="result-context"></p></div>
+      <div class="actions"><button class="secondary" id="print" type="button">印刷</button><button class="secondary" id="export" type="button">CSV保存</button></div>
+    </div>
+    <div id="summary" class="metrics" aria-live="polite"></div>
+    <p class="note">中間希釈がある場合は、同じIDの中間チューブで原液と水を混和し、指定量を最終チューブに移します。水はすべて RNase-free 水です。</p>
+    <div class="table-wrap" tabindex="0" aria-label="サンプル別の操作表">
+      <table>
+        <thead>
+          <tr><th rowspan="2" scope="col">完了</th><th rowspan="2" scope="col">ID</th><th rowspan="2" scope="col">RNA<br>ng/µL</th><th rowspan="2" scope="col">調製方法</th><th colspan="2" scope="colgroup">中間チューブ · µL</th><th colspan="2" scope="colgroup">最終チューブ · µL</th><th rowspan="2" scope="col">RNA見込み<br>ng</th></tr>
+          <tr><th scope="col">原液</th><th scope="col">水</th><th scope="col">原液 / 中間液</th><th scope="col">水</th></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+</body>
+</html>

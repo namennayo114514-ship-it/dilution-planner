@@ -1,0 +1,79 @@
+:root {
+  color-scheme: light;
+  font-family: "Instrument Sans", system-ui, sans-serif;
+  color: #172c29;
+  background: #f2f6f4;
+  --muted: #506961;
+  --line: #d8e4de;
+  --green: #135b47;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; }
+header { background: #fff; border-bottom: 1px solid var(--line); }
+.shell { width: min(1190px, calc(100% - 44px)); margin-inline: auto; }
+.brand { display: flex; align-items: center; gap: 12px; min-height: 64px; font-weight: 750; }
+.mark { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 8px; background: var(--green); color: white; font-size: 22px; }
+.intro { margin-block: 36px 24px; }
+h1 { margin: 0; font-size: clamp(1.8rem, 4vw, 2.55rem); letter-spacing: -.045em; }
+h2 { margin: 0; font-size: 1.14rem; }
+p { line-height: 1.65; }
+.intro p { color: var(--muted); margin: 8px 0 0; }
+.workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr); gap: 18px; }
+.card, .results { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
+.targets, .settings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.targets { margin-block: 15px; }
+.settings { margin-top: 10px; }
+label { font-size: .84rem; font-weight: 650; }
+h2 label { font-size: inherit; }
+label span { color: var(--muted); font-size: .76rem; }
+input[type=number], textarea { width: 100%; border: 1px solid #b9cec5; border-radius: 7px; background: #f9fbfa; color: inherit; padding: 8px 10px; font: inherit; }
+input[type=number] { margin-top: 4px; }
+.targets input { font-size: 1.26rem; }
+summary { color: var(--green); font-size: .86rem; cursor: pointer; font-weight: 700; }
+textarea { resize: vertical; min-height: 150px; font: .84rem/1.55 "IBM Plex Mono", ui-monospace, monospace; }
+.samples { display: flex; flex-direction: column; }
+.samples textarea { flex: 1; }
+.heading, .actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.heading { justify-content: space-between; }
+.samples .actions { justify-content: space-between; margin-top: 10px; }
+.note { color: var(--muted); font-size: .83rem; margin-block: 10px; }
+#input-kind { color: #775116; font-size: .83rem; font-weight: 700; }
+button { border-radius: 7px; padding: 9px 13px; border: 1px solid var(--green); background: var(--green); color: white; font: inherit; font-size: .85rem; font-weight: 700; cursor: pointer; }
+button:hover { filter: brightness(.92); }
+.secondary { background: #fff; color: var(--green); border-color: #b9cec5; }
+:focus-visible { outline: 2px solid #2d846c; outline-offset: 3px; }
+.error { padding: 12px; background: #fff0ec; color: #8e2a1c; border-radius: 8px; }
+.results { margin-block: 18px 35px; }
+.result-heading .note { margin: 4px 0 0; }
+.metrics { margin-top: 14px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.metrics div { display: grid; gap: 4px; padding: 9px 11px; border-radius: 8px; background: #edf5f0; }
+.metrics span { color: var(--muted); font-size: .76rem; }
+.metrics strong { font-size: 1.05rem; }
+.table-wrap { overflow: auto; max-height: 64vh; }
+table { width: 100%; min-width: 790px; border-spacing: 0; font-size: .83rem; font-variant-numeric: tabular-nums; }
+thead { position: sticky; top: 0; z-index: 1; background: #e8f1ec; }
+th, td { text-align: center; padding: 8px; border-bottom: 1px solid var(--line); }
+td:nth-child(2), td:nth-child(4) { text-align: left; overflow-wrap: anywhere; }
+td:nth-child(2) { font-weight: 750; }
+td:nth-child(7), td:nth-child(8) { background: #eff7f2; }
+tr.hold td, tr.custom td:nth-child(4) { background: #fff6df; color: #775116; }
+tr.done td { background: #e0eee6; color: #476057; }
+input[type=checkbox] { width: 17px; height: 17px; accent-color: var(--green); vertical-align: middle; }
+@media (max-width: 740px) {
+  .shell { width: calc(100% - 24px); }
+  .workspace { grid-template-columns: 1fr; }
+  .card, .results { padding: 14px; }
+  .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media print {
+  body { background: white; }
+  header, .intro, .workspace, .error, .result-heading .actions { display: none; }
+  .shell { width: 100%; }
+  .results { margin: 0; padding: 0; border: 0; }
+  .table-wrap { overflow: visible; max-height: none; }
+  table { min-width: 0; font-size: 9pt; }
+  thead { position: static; display: table-header-group; }
+  tr { break-inside: avoid; }
+  th, td { padding: 4px; }
+}
