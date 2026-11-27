@@ -67,6 +67,7 @@ function render(grid) {
     check.setAttribute("aria-label", `${plan.id} の調製完了`);
     check.addEventListener("change", () => row.classList.toggle("done", check.checked));
     cell(row, check);
+    cell(row, plan.tube);
     cell(row, plan.id);
     cell(row, displayNumber(plan.rna));
     cell(row, plan.reason || labels[plan.kind]);
@@ -105,11 +106,11 @@ function csvCell(value) {
 }
 
 function download() {
-  const heading = ["ID", "原液RNA ng/µL", "原液DNA ng/µL", "原液残量 µL", "調製方法",
+  const heading = ["番号", "Sample ID", "原液RNA ng/µL", "原液DNA ng/µL", "原液残量 µL", "調製方法",
     "中間 原液 µL", "中間 原液 ピペット", "中間 水 µL", "中間 水 ピペット",
     "最終 原液または中間液 µL", "最終 移送 ピペット", "最終 水 µL", "最終 水 ピペット",
     "RNA見込み ng", "目標との差 %", "中間液残り µL"];
-  const rows = current.map(p => [p.id, p.rna, p.dna, p.stock, p.reason || labels[p.kind],
+  const rows = current.map(p => [p.tube, p.id, p.rna, p.dna, p.stock, p.reason || labels[p.kind],
     p.kind === "direct" ? null : p.source, p.kind === "direct" ? null : p.sourcePipette,
     p.kind === "direct" ? null : p.intermediateWater, p.intermediateWaterPipette,
     p.aliquot, p.aliquotPipette, p.finalWater, p.finalWaterPipette, p.amount?.toPrecision(8), p.error?.toFixed(4), p.waste]);

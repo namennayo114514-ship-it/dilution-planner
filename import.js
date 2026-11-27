@@ -26,7 +26,8 @@ function readExcelTables(bytes) {
       const [idColumn] = ids;
       const [rnaColumn] = rnas;
       const dnaColumn = dnas[0];
-      const values = ["id\trna\tdna"];
+      const tubeColumn = headings.findIndex(value => /^(tubeno\.?|tubeid|チューブ番号)$/.test(value));
+      const values = ["id\trna\tdna\ttube"];
       let missing = 0;
       for (let row = header + 1; row < rows.length; row++) {
         if (rows[row].every(v => v === null || v === "")) continue;
@@ -51,7 +52,9 @@ function readExcelTables(bytes) {
           return String(Number(parsed.toPrecision(15)));
         };
         if (rna === null || rna === "") missing++;
-        values.push([id, number(rna, rnaColumn), number(dna, dnaColumn)].join("\t"));
+        const tube = tubeColumn < 0 ? String(values.length) : String(rows[row][tubeColumn] ?? "").trim();
+        if (!/^S?\d+$/i.test(tube)) throw new Error(address(tubeColumn) + "のTube Noを整数で入力してください。");
+        values.push([id, number(rna, rnaColumn), number(dna, dnaColumn), tube].join("\t"));
       }
       if (values.length > 1) {
         tables.push({

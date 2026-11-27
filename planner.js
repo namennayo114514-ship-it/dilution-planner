@@ -13,7 +13,7 @@ function parseSamples(input) {
   const hasHeader = header[0] === "id";
   const columns = hasHeader ? header : ["id", "rna", "dna", "stock"];
   if (hasHeader && (new Set(columns).size !== columns.length ||
-      !columns.includes("rna") || columns.some(cell => !["id", "rna", "dna", "stock"].includes(cell)))) {
+      !columns.includes("rna") || columns.some(cell => !["id", "rna", "dna", "stock", "tube"].includes(cell)))) {
     throw new Error("見出しには id と rna が必要です。dna と stock は任意です。");
   }
   const samples = [];
@@ -36,7 +36,9 @@ function parseSamples(input) {
       }
       return number;
     };
-    samples.push({ id, rna: read("rna"), dna: read("dna"), stock: read("stock") });
+    const tube = values[columns.indexOf("tube")] || String(samples.length + 1);
+    if (!/^S?\d+$/i.test(tube)) throw new Error("tube は整数またはS付きの整数で入力してください。");
+    samples.push({ id, tube: "S" + tube.replace(/^s/i, ""), rna: read("rna"), dna: read("dna"), stock: read("stock") });
   }
   if (!samples.length) throw new Error("サンプルを入力してください。");
   if (samples.length > 1000) throw new Error("一度に計算できる上限は1,000サンプルです。");

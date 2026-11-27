@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>希釈プランナー</title>
 <meta name="description" content="Qubitの濃度からサンプルごとの希釈手順を計算します。">
-<link rel="stylesheet" href="style.css?v=empty-start">
+<link rel="stylesheet" href="style.css?v=sample-number">
 <script defer src="vendor/xlsx.full.min.js"></script>
-<script defer src="import.js?v=empty-start"></script>
-<script defer src="planner.js?v=empty-start"></script>
-<script defer src="app.js?v=empty-start"></script>
+<script defer src="import.js?v=sample-number"></script>
+<script defer src="planner.js?v=sample-number"></script>
+<script defer src="app.js?v=sample-number"></script>
 </head>
 <body>
 <header><div class="shell brand"><span class="mark" aria-hidden="true">µ</span> 希釈プランナー</div></header>
@@ -70,7 +70,7 @@
     <div class="table-wrap" tabindex="0" aria-label="サンプル別の操作表">
       <table>
         <thead>
-          <tr><th rowspan="2" scope="col">完了</th><th rowspan="2" scope="col">ID</th><th rowspan="2" scope="col">RNA<br>ng/µL</th><th rowspan="2" scope="col">調製方法</th><th colspan="2" scope="colgroup">中間チューブ · µL</th><th colspan="2" scope="colgroup">最終チューブ · µL</th><th rowspan="2" scope="col">RNA見込み<br>ng</th></tr>
+          <tr><th rowspan="2" scope="col">完了</th><th rowspan="2" scope="col">番号</th><th rowspan="2" scope="col">Sample ID</th><th rowspan="2" scope="col">RNA<br>ng/µL</th><th rowspan="2" scope="col">調製方法</th><th colspan="2" scope="colgroup">中間チューブ · µL</th><th colspan="2" scope="colgroup">最終チューブ · µL</th><th rowspan="2" scope="col">RNA見込み<br>ng</th></tr>
           <tr><th scope="col">原液</th><th scope="col">水</th><th scope="col">試料</th><th scope="col">水</th></tr>
         </thead>
         <tbody id="rows"></tbody>
