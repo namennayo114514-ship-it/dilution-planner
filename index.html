@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>希釈プランナー</title>
 <meta name="description" content="Qubitの濃度からサンプルごとの希釈手順を計算します。">
-<link rel="stylesheet" href="style.css?v=excel-one">
+<link rel="stylesheet" href="style.css?v=empty-start">
 <script defer src="vendor/xlsx.full.min.js"></script>
-<script defer src="import.js?v=excel-one"></script>
-<script defer src="planner.js?v=excel-one"></script>
-<script defer src="app.js?v=excel-one"></script>
+<script defer src="import.js?v=empty-start"></script>
+<script defer src="planner.js?v=empty-start"></script>
+<script defer src="app.js?v=empty-start"></script>
 </head>
 <body>
 <header><div class="shell brand"><span class="mark" aria-hidden="true">µ</span> 希釈プランナー</div></header>
@@ -26,7 +26,7 @@
         <label>最終体積 <span>µL</span><input name="volume" type="number" min="0.000001" step="any" value="13" required></label>
         <label>目標RNA量 <span>ng</span><input name="mass" type="number" min="0.000001" step="any" value="1" required></label>
       </div>
-      <details open>
+      <details>
         <summary>ピペット設定と許容差</summary>
         <p class="note">ピペットごとの最小量・最大量・刻みを実機に合わせてください（µL）。</p>
         <table class="pipette-settings">
@@ -50,7 +50,7 @@
       <p class="note">実際に使うピペットと、ライブラリー調製条件に合わせて設定してください。許容差は分注量の丸めに対する設定です。</p>
     </section>
     <section class="card samples">
-      <div class="heading"><h2><label for="samples">サンプル入力</label></h2><button class="secondary" type="button" id="demo">仮データ60件</button></div>
+      <div class="heading"><h2><label for="samples">サンプル入力</label></h2></div>
       <label class="upload">Excelファイルを読み込む<input id="excel-file" type="file" accept=".xlsx,.xls"></label>
       <div id="excel-options" hidden><label>読み込む表<select id="excel-table"></select></label><p class="note" id="excel-info" role="status"></p></div>
       <p class="note">Excelはこのブラウザ内で読み込みます。読み込んだ値は下の入力欄で修正できます。</p>

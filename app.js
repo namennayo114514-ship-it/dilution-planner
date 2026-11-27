@@ -9,25 +9,11 @@ const form = byId("plan-form");
 const input = byId("samples");
 const labels = { direct: "直接", shared: "1段 · 中間→最終", custom: "1段 · 個別移送", hold: "要確認" };
 let current = [];
-let demo = false;
 
 function invalidate() {
   current = [];
   byId("results").hidden = true;
   byId("error").hidden = true;
-}
-
-function loadDemo() {
-  const values = Array.from({ length: 60 }, (_, index) => {
-    const id = "S" + String(index + 1).padStart(2, "0");
-    const rna = index === 59 ? 50 : 1 + (index * 137 % 490) / 10;
-    const dna = 1 + (index * 91 % 490) / 10;
-    return `${id},${rna.toFixed(1)},${dna.toFixed(1)}`;
-  });
-  input.value = ["id,rna,dna", ...values].join("\n");
-  demo = true;
-  byId("input-kind").textContent = "仮データ";
-  calculate();
 }
 
 function displayNumber(value) {
@@ -46,7 +32,7 @@ function render(grid) {
   const finalWater = ready.reduce((sum, row) => sum + row.finalWater, 0);
   const waste = ready.reduce((sum, row) => sum + row.waste, 0);
   byId("result-context").textContent =
-    `${demo ? "仮データ · " : ""}${current.length}件 · 目標 ${displayNumber(grid.final / 1000)} µL / ${displayNumber(grid.mass)} ng · 許容差 ±${displayNumber(grid.tolerance * 100)}%`;
+    `${current.length}件 · 目標 ${displayNumber(grid.final / 1000)} µL / ${displayNumber(grid.mass)} ng · 許容差 ±${displayNumber(grid.tolerance * 100)}%`;
   const metrics = [
     ["調製可能", `${ready.length} / ${current.length}件`],
     ["中間チューブ", `${ready.reduce((count, row) => count + Number(row.kind !== "direct"), 0)}本`],
@@ -131,7 +117,7 @@ function download() {
   const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
   const link = document.createElement("a");
   link.href = url;
-  link.download = demo ? "希釈手順_仮データ.csv" : "希釈手順.csv";
+  link.download = "希釈手順.csv";
   link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
@@ -142,15 +128,12 @@ form.addEventListener("submit", event => {
 });
 form.addEventListener("input", event => {
   if (event.target === input) {
-    demo = false;
     byId("input-kind").textContent = "";
   }
   invalidate();
 });
-byId("demo").addEventListener("click", loadDemo);
 byId("export").addEventListener("click", download);
 byId("print").addEventListener("click", () => window.print());
-loadDemo();
 
 let excelTables = [];
 let importSequence = 0;
@@ -159,7 +142,6 @@ function applyExcelTable() {
   const table = excelTables[Number(byId("excel-table").value)];
   if (!table) return;
   input.value = table.text;
-  demo = false;
   byId("input-kind").textContent = "Excelから読み込み";
   byId("excel-info").textContent = table.description;
   invalidate();
