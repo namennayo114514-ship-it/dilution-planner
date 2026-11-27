@@ -154,34 +154,6 @@ function planSample(sample, grid) {
   }
   const shared = aliquots.includes(transfer) ? find([transfer]) : null;
   const choice = shared || find(aliquots.filter(value => value !== transfer));
-  let serial;
-  // 原液は最小分注量、A→B と B→最終は共通移送量に揃える。
-  const source = volumes[0];
-  if (aliquots.includes(transfer) && source <= stockMax) {
-    for (const firstWater of volumes) {
-      const firstTotal = source + firstWater;
-      if (firstTotal < transfer + reserve) continue;
-      const waterSoFar = firstWater + final - transfer;
-      if (waterSoFar + volumes[0] >= (serial?.totalWater ?? choice?.totalWater ?? Infinity)) break;
-      const firstRatio = ratio * (source / firstTotal);
-      const minimumWater = transfer * (transfer * firstRatio / (1 + tolerance + EPS) - 1);
-      const secondWater = firstAtLeast(volumes, Math.max(reserve, minimumWater));
-      if (secondWater === undefined) continue;
-      const relative = firstRatio * transfer * (transfer / (transfer + secondWater));
-      const totalWater = waterSoFar + secondWater;
-      if (fits(relative) && totalWater < (serial?.totalWater ?? choice?.totalWater ?? Infinity)) {
-        serial = { firstWater, secondWater, relative, totalWater };
-      }
-    }
-  }
-  if (serial) {
-    const plan = result("serial", source, serial.firstWater, transfer, serial.relative);
-    return {
-      ...plan, secondSource: transfer / UNITS, secondSourcePipette: pipettes.get(transfer),
-      secondWater: serial.secondWater / UNITS, secondWaterPipette: pipettes.get(serial.secondWater),
-      waste: (source + serial.firstWater - transfer + serial.secondWater) / UNITS
-    };
-  }
   if (!choice) return hold("設定したピペットで調製不可");
   return result(shared ? "shared" : "custom", choice.source, choice.water, choice.aliquot, choice.relative);
 }
